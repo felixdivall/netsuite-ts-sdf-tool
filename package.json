@@ -1,0 +1,45 @@
+{
+  "name": "typescript-sdf-template",
+  "version": "1.0.0",
+  "description": "NetSuite SDF TypeScript Template",
+  "module": "index.js",
+  "type": "module",
+  "devDependencies": {
+    "bun-types": "latest",
+    "@hitc/netsuite-types": "^2021.1.9",
+    "@oracle/suitecloud-cli": "^1.3.0",
+    "@oracle/suitecloud-unit-testing": "^1.1.4",
+    "del": "^6.0.0",
+    "gulp": "^4.0.2",
+    "gulp-rename": "^2.0.0",
+    "jest": "^26.4.2",
+    "eslint": "^7.22.0",
+    "eslint-config-standard": "^16.0.2",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-promise": "^4.3.1",
+    "eslint-plugin-suitescript": "^1.2.1",
+    "@typescript-eslint/eslint-plugin": "^4.18.0",
+    "@typescript-eslint/parser": "^4.18.0",
+    "typescript": "^4.0.3",
+    "webpack": "^4.44.2",
+    "webpack-cli": "^3.3.12"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "bin": {
+    "sta": "./index.js"
+  },
+  "dependencies": {
+    "inquirer": "^9.2.11"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/felixdivall/typescript-sdf-template.git"
+  },
+  "author": "Felix Divall",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/felixdivall/typescript-sdf-template/issues"
+  }
+}

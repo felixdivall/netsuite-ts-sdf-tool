@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "module": "amd",
+    "target": "es5",
+    "moduleResolution": "node",
+    "sourceMap": false,
+    "newLine": "lf",
+    "experimentalDecorators": true,
+    "noImplicitUseStrict": true,
+    "baseUrl": ".",
+    "lib": ["es5", "dom", "es6", "es2018"],
+    "paths": {
+      "N": ["node_modules/@hitc/netsuite-types/N"],
+      "N/*": ["node_modules/@hitc/netsuite-types/N/*"],
+      "definitions/*": ["src/TypeScript/definitions/*"],
+      "helpers/*": ["src/TypeScript/helpers/*"],
+      "services/*": ["src/TypeScript/services/*"]
+    },
+    "rootDir": "src/TypeScript/",
+    "outDir": "src/FileCabinet/SuiteScripts/"
+  },
+  "include": ["src/TypeScript/**/*.ts"],
+  "exclude": ["node_modules"]
+}
