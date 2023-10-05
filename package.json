@@ -1,7 +1,7 @@
 {
-  "name": "typescript-sdf-template",
+  "name": "netsuite-ts-sdf-tool",
   "version": "1.0.0",
-  "description": "NetSuite SDF TypeScript Template",
+  "description": "NetSuite Tool to generate SDF Template for TypeScript and more",
   "module": "index.js",
   "type": "module",
   "devDependencies": {
@@ -28,18 +28,25 @@
     "typescript": "^5.0.0"
   },
   "bin": {
-    "sta": "./index.js"
+    "sta": "./index.js",
+    "nst": "./index.js"
   },
   "dependencies": {
     "inquirer": "^9.2.11"
   },
+  "keywords": [
+    "netsuite",
+    "sdf",
+    "typescript",
+    "template"
+  ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/felixdivall/typescript-sdf-template.git"
+    "url": "git+https://github.com/felixdivall/netsuite-ts-sdf-tool.git"
   },
   "author": "Felix Divall",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/felixdivall/typescript-sdf-template/issues"
+    "url": "https://github.com/felixdivall/netsuite-ts-sdf-tool/issues"
   }
 }

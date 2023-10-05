@@ -22,12 +22,9 @@ const scriptTypes = [
 ];
 
 const [,, command, ...args] = process.argv;
-// const command = process.argv[2];
-// const buildToolArg = process.argv[3];
 
 function updateWebpackConfig(fileName, folderPath, projectPath = '') {
     const webpackConfigPath = path.join(projectPath, 'webpack-entry-config.json');
-    // const webpackConfigPath = path.join(projectPath, 'webpack-entry-config.json');
     let configContent;
 
     // Check if webpackConfigPath exists and is not an empty file.
@@ -36,9 +33,6 @@ function updateWebpackConfig(fileName, folderPath, projectPath = '') {
             configContent = JSON.parse(fs.readFileSync(webpackConfigPath, 'utf8'));
         } catch (error) {
             console.error('Error parsing webpack-entry-config.json:', error);
-            // Decide how you want to handle this error.
-            // E.g., you might choose to overwrite the file with new content,
-            // log the error and exit, etc.
             configContent = {};
         }
     } else {
@@ -117,57 +111,45 @@ switch (command) {
             }
         break;
     case 'build':
-        // run npm run build && suitecloud file:upload --paths "/SuiteScripts/<path from webpack-entry-config.json>.js"
-        // the user should be able to select which file to upload
-        const getEntries = () => {
-            const entryFilePath = path.resolve(__dirname, 'webpack-entry-config.json');
-            if (fs.existsSync(entryFilePath)) {
-                const entries = require(entryFilePath);
-                console.log('entries ' + entries)
-                return entries;
-            }
-            return {};
-        };
-        case 'build':
-            const webpackConfigPath = path.join(process.cwd(), 'webpack-entry-config.json');
-            // Ensure webpack-entry-config.json exists and is readable
-            if (fs.existsSync(webpackConfigPath)) {
-                const configContent = JSON.parse(fs.readFileSync(webpackConfigPath, 'utf8'));
-                const entryPaths = Object.keys(configContent).map(key => `${key}.js`);
-                inquirer
-                    .prompt([
-                        {
-                            type: 'list',
-                            name: 'buildPath',
-                            message: 'Please select the path to build:',
-                            choices: entryPaths,
-                        }
-                    ])
-                    .then((answers) => {
-                        const { buildPath } = answers;
-    
-                        // Ensure to escape any special characters in path to avoid shell injection
-                        const safePath = buildPath.replace(/(["\s'$`\\])/g,'\\$1');
+        const webpackConfigPath = path.join(process.cwd(), 'webpack-entry-config.json');
+        // Ensure webpack-entry-config.json exists and is readable
+        if (fs.existsSync(webpackConfigPath)) {
+            const configContent = JSON.parse(fs.readFileSync(webpackConfigPath, 'utf8'));
+            const entryPaths = Object.keys(configContent).map(key => `${key}.js`);
+            inquirer
+                .prompt([
+                    {
+                        type: 'list',
+                        name: 'buildPath',
+                        message: 'Please select the path to build:',
+                        choices: entryPaths,
+                    }
+                ])
+                .then((answers) => {
+                    const { buildPath } = answers;
 
-                        // Execute build and upload commands
-                        const toolkit = process.argv[3] === 'bun' ? 'bun' : 'npm';
-                        // console.log('output: ' + `${toolkit} run build && suitecloud file:upload --paths "/SuiteScript/${safePath}`)
-                        exec(`${toolkit} run build && suitecloud file:upload --paths "/SuiteScript/${safePath}.js"`, (error, stdout, stderr) => {
-                            if (error) {
-                                console.error(`Error during build or upload: ${error.message}`);
-                                return;
-                            }
-                            if (stderr) {
-                                console.error(`stderr: ${stderr}`);
-                                return;
-                            }
-                            console.log(`stdout: ${stdout}`);
-                        });
+                    // Ensure to escape any special characters in path to avoid shell injection
+                    const safePath = buildPath.replace(/(["\s'$`\\])/g,'\\$1');
+
+                    // Execute build and upload commands
+                    const toolkit = process.argv[3] === 'bun' ? 'bun' : 'npm';
+                    // console.log('output: ' + `${toolkit} run build && suitecloud file:upload --paths "/SuiteScript/${safePath}`)
+                    exec(`${toolkit} run build && suitecloud file:upload --paths "/SuiteScript/${safePath}.js"`, (error, stdout, stderr) => {
+                        if (error) {
+                            console.error(`Error during build or upload: ${error.message}`);
+                            return;
+                        }
+                        if (stderr) {
+                            console.error(`stderr: ${stderr}`);
+                            return;
+                        }
+                        console.log(`stdout: ${stdout}`);
                     });
-            } else {
-                console.error("webpack-entry-config.json does not exist or is not readable.");
-            }
-            break;
+                });
+        } else {
+            console.error("webpack-entry-config.json does not exist or is not readable.");
+        }
+        break;
     default:
         console.log(`Unknown command: ${command}`);
         break;
