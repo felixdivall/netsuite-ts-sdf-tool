@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
-import readline from 'readline';
 import inquirer from 'inquirer';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { exec } from 'child_process';
 
 // Get the directory name of the current module.
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -169,6 +169,7 @@ export function createProjectStructure(projectName, fileName, folderPath) {
         '.eslintignore',
         '.eslintrc.json',
         '.gitignore',
+        'gulpfile.js',
         'package.json',
         'project.json',
         'projectconfig.js',

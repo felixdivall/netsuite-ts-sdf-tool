@@ -1,0 +1,49 @@
+# IDEs and editors
+.idea
+*.iml
+*.iws
+.project
+.classpath
+*.launch
+.settings
+*.sublime-workspace
+.vscode
+project.json
+jsconfig.json
+SuiteScript\ 2.0\ API/
+dist/
+suiteapp/
+*.attributes
+*.DS_Store
+node_modules
+package-lock.json
+
+# Dependency directories
+node_modules
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Packaged SDF projects
+build
+
+# misc
+.sass-cache
+
+# Optional npm cache directory
+.npm
+
+# Lerna
+lerna-debug.log
+
+# System Files
+.DS_Store
+Thumbs.db
+
+# Output of 'npm pack'
+*.tgz

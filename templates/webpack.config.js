@@ -23,14 +23,14 @@ const outFolder = path.resolve(
 const getEntries = () => {
     // You might load your entries from a JSON file, or scan directories to generate them, etc.
     // In this example, let's assume you have an `entryConfig.json` file.
-    const entryFilePath = path.resolve(__dirname, 'webpack-entry-config.json');
+    const entryFilePath = path.resolve(__dirname, 'webpack-entry-config.json')
     if (fs.existsSync(entryFilePath)) {
-        const entries = require(entryFilePath);
-        return entries;
+        const entries = require(entryFilePath)
+        return entries
     }
     // Handle missing entry file case (optional)
-    return {};
-};
+    return {}
+}
 
 // const entries = {
 //     %%FILE_NAME%%: './src/TypeScript/%%FILE_NAME%%.ts',
