@@ -1,21 +1,31 @@
 ## NetSuite TypeScript SDF Tool
+netsuite-ts-sdf-tool is a command-line interface (CLI) tool designed to automate and streamline your project creation and build processes, particularly focusing on SuiteScripts development for the NetSuite platform.
+
+To install netsuite-ts-sdf-tool, use npm:
+```bash
+npm install -g netsuite-ts-sdf-tool
+```
+Ensure that you have Node.js and npm installed on your machine.
 
 To install dependencies:
-
-```bash
-bun install
-```
-or
 ```bash
 npm install
 ```
 
-#### Commands
+#### Usage
+###### setup
+Use the setup command to configure the CLI with user-specific details, such as file prefix and filename format.
+```bash
+nst setup
+```
+It will guide you through a setup wizard to configure your user settings.
+
 ###### create
+The create command initializes a new project structure, including appropriate naming and directory handling.
 ```bash
 nst create
 ```
-The create command initializes a new project structure with predefined directories and template files. It prompts you to specify the project name, script type, and optional folder path. The project structure is generated in the current working directory and is configured according to the responses given to the prompts.
+After running the command, follow the prompts to define script type, project name, and destination folder. Your file will be named according to the format specified during setup (or default if not set). You will be prompted to confirm the suggested name and be able to override it.
 
 ###### newfile
 ```bash
@@ -24,6 +34,7 @@ nst newfile
 Utilizing newfile, you can swiftly generate a new TypeScript file in your project. The command prompts you to enter a filename and an optional folder path. It ensures the file is created at the desired location and updates the webpack configuration automatically.
 
 ###### build [bun]
+Use the build command to compile your project and upload the built file(s) to the SuiteCloud File Cabinet.
 ```bash
 nst build
 ```
@@ -31,28 +42,21 @@ or with an optional argument:
 ```bash
 nst build bun
 ```
-The build command facilitates building and uploading your script to the NetSuite account. Upon execution, it prompts you to select a path (from those specified in webpack-entry-config.json) for which the build and upload processes will be carried out.
+Upon execution, the CLI will prompt you to select one or more path(s) to build from a list. Choose the desired option(s) and the script will handle the build and upload process. Ensure your project.json is properly configured and not empty, as the CLI will fetch the account authentication ID from this file as a security step to not accidentaly deploy to Production.
 
-If used without an argument, it uses npm for the build process:
-
-```bash
-npm run build && suitecloud file:upload --paths "/SuiteScript/YOUR_SELECTED_PATH.js"
-```
-When used with the bun argument:
-```bash
-nst build bun
-```
-It swaps npm with bun for the build process:
+If used without bun as argument, it uses npm for the build process. If used with bun as argument it'll run using bun instead.
 
 ```bash
-bun build && suitecloud file:upload --paths "/SuiteScript/YOUR_SELECTED_PATH.js"
+npm/bun run build && suitecloud file:upload --paths "/SuiteScript/YOUR_SELECTED_PATH.js" "/SuiteScript/ANOTHER_SELECTED_PATH.js"
 ```
-Getting Started
 
-#### Installation
-```bash
-npm install -g netsuite-ts-sdf-tool
-```
+#### Configuration
+Ensure to run the setup before creating a new project to specify your desired filename prefix and format. You can specify filename format using placeholders like {prefix}, {scriptType}, and {projectName}.
+Example format: "{prefix}_{scriptType}_{projectName}"
+
+Ensure your project.json is correctly configured and authenticated using SuiteCloud CLI.
+If not authenticated, utilize: suitecloud account:setup -i
+
 #### Contribution
 Contributions to netsuite-ts-sdf-tool are always welcome, whether it be improvements to documentation, feature requests and implementation, bug fixes, and more.
 

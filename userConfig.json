@@ -1,0 +1,4 @@
+{
+    "filePrefix": "",
+    "filenameFormat": "{prefix}_{scriptType}_{projectName}"
+}

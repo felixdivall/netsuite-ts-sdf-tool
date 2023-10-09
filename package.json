@@ -1,6 +1,6 @@
 {
   "name": "netsuite-ts-sdf-tool",
-  "version": "1.0.3",
+  "version": "1.2.1",
   "description": "NetSuite Tool to generate SDF Template for TypeScript and more",
   "module": "index.js",
   "type": "module",
