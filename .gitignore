@@ -167,3 +167,4 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.\*
+templates/tsconfig_cheat-sheet.jsonc
