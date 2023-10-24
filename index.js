@@ -8,11 +8,15 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import ora from 'ora';
 import { fileURLToPath } from 'url';
-import { spawn } from 'child_process';
-// import { exec } from 'child_process';
+import { spawn, execSync } from 'child_process';
+import os from 'os';
 
-// Get the directory name of the current module.
+
+// get the directory name of the current module
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// TODO script templates, let user's also save their template and add custom templates
+// TODO help command
 
 const scriptTypes = [
     { name: 'User Event', value: 'ue' },
@@ -23,16 +27,29 @@ const scriptTypes = [
     { name: 'RESTlet', value: 'rl' },
     { name: 'Portlet', value: 'plet' },
     { name: 'Mass Update', value: 'mu' },
-    { name: 'Workflow Action', value: 'wa' }
+    { name: 'Workflow Action', value: 'wfa' }
 ];
+
+const scriptTypesMap = new Map([
+    ['User Event', ['beforeLoad()', 'beforeSubmit()', 'afterSubmit()']],
+    ['Client Script', ['fieldChanged()', 'lineInit()', 'pageInit()', 'postSourcing()', 'saveRecord()', 'sublistChanged()', 'validateDelete()', 'validateField()', 'validateInsert()', 'validateLine()', 'localizationContextEnter()', 'localizationContextExit()']],
+    ['Suitelet', ['Base']],
+    ['Map/Reduce', ['Base']],
+    ['Scheduled Script', ['execute()']],
+    ['RESTlet', ['get()', 'post()', 'put()', 'delete()', 'patch()', 'head()']],
+    ['Portlet', ['render()']],
+    ['Mass Update', ['each()']],
+    ['Workflow Action', ['onAction()']],
+]);
+const multipleSelectionTypes = ['Client Script', 'User Event', 'RESTlet'];
 
 const [,, command, ...args] = process.argv;
 
 function updateWebpackConfig(fileName, folderPath, projectPath = '') {
     const webpackConfigPath = path.join(projectPath, 'webpack-entry-config.json');
     let configContent;
-
-    // Check if webpackConfigPath exists and is not an empty file.
+ 
+    // check if webpackConfigPath exists and is not an empty file
     if (fs.existsSync(webpackConfigPath) && fs.statSync(webpackConfigPath).size > 0) {
         try {
             configContent = JSON.parse(fs.readFileSync(webpackConfigPath, 'utf8'));
@@ -44,9 +61,9 @@ function updateWebpackConfig(fileName, folderPath, projectPath = '') {
         configContent = {};
     }
 
-    // Using folderPath if provided, otherwise just using fileName
-    // const file = `${filePrefix}_${fileName.replace('.ts', '')}`
     const file = [fileName.replace('.ts', '')].join('_');
+    
+    // using folderPath if provided, otherwise just using fileName
     const entryKey = folderPath ? `${folderPath}/${file}` : file;
     configContent[entryKey] = `./src/TypeScript/${file}.ts`;
     
@@ -62,14 +79,12 @@ switch (command) {
         let filePrefix;
         let filenameFormat;
 
-        // Check if the userConfig.json file exists and if it has a filePrefix
         if (fs.existsSync(userConfigPath)) {
             userConfig = JSON.parse(readFileSync(userConfigPath, 'utf8'));
             filePrefix = userConfig.filePrefix;
             filenameFormat = userConfig.filenameFormat || "{prefix}_{scriptType}_{projectName}";
         }
 
-        // If filePrefix is undefined, null, or empty, prompt the user to input it.
         if (!filePrefix) {
             inquirer.prompt([
                 {
@@ -80,22 +95,16 @@ switch (command) {
                         if (!input.trim()) {
                             return "The prefix cannot be empty";
                         }
-                        // More validations if necessary
                         return true;
                     }
                 }
             ])
             .then((answers) => {
                 filePrefix = answers.filePrefix;
-
-                // Save the filePrefix back to userConfig.json
                 fs.writeFileSync(userConfigPath, JSON.stringify({ filePrefix }, null, 4));
-
-                // Continue with the existing prompts
                 promptForProjectDetails();
             });
         } else {
-            // Continue with the existing prompts
             promptForProjectDetails();
         }
 
@@ -122,7 +131,6 @@ switch (command) {
                 const { projectName, scriptType, folderPath } = answers;
                 let fileName = formatFilename(filenameFormat, filePrefix, scriptType, projectName);
         
-                // Ask user for confirmation on file name
                 const confirmAnswer = await inquirer.prompt([
                     {
                         type: 'confirm',
@@ -132,11 +140,9 @@ switch (command) {
                 ]);
         
                 if (confirmAnswer.confirmFileName) {
-                    // Continue with project creation
                     const projectPath = createProjectStructure(projectName, fileName);
                     updateWebpackConfig(fileName, folderPath, projectPath);
                 } else {
-                    // Ask for custom file name
                     const customFileNameAnswer = await inquirer.prompt([
                         {
                             type: 'input',
@@ -148,15 +154,25 @@ switch (command) {
         
                     fileName = customFileNameAnswer.customFileName;
         
-                    // Continue with project creation with customFileName
+                    // continue with project creation with customFileName
                     const projectPath = createProjectStructure(projectName, fileName);
                     updateWebpackConfig(fileName, folderPath, projectPath);
+                }
+                if (os.platform() === 'win32') {
+                    execSync(`cd "${projectName}" && npm install`, { stdio: 'inherit' });
+                } else {
+                    execSync(`cd "${projectName}" && curl -fsSL https://bun.sh/install | bash && bun install`, { stdio: 'inherit' });
                 }
             });
         }
         
-
         function formatFilename(filenameFormat, filePrefix, scriptType, str) {
+            // process str: replace '-' with '_' and remove any '.ts' suffix
+            str = str.replace(/-|\.ts$/g, function(match) {
+                if (match === '.ts') return '';
+                if (match === '-') return '_';
+            });
+        
             const replacements = {
                 '{prefix}': filePrefix,
                 '{projectName}': str.toLowerCase().replace(/\s+/g, '_'),
@@ -165,11 +181,12 @@ switch (command) {
         
             let filename = filenameFormat;
             for (const [placeholder, value] of Object.entries(replacements)) {
-                filename = filename.replace(placeholder, value);
+                filename = filename.replace(new RegExp(placeholder, 'g'), value);
             }
         
             return filename + '.ts';
         }
+        
         break;
 
     case 'newfile':
@@ -189,151 +206,144 @@ switch (command) {
             .then((answers) => {
                 const { fileName, folderPath } = answers;
                 createNewFile(fileName);
-                // const userConfig = JSON.parse(fs.readFileSync(join(__dirname, 'userConfig.json'), 'utf8'));
-                // const filePrefix = userConfig.filePrefix || ""; // Default to an empty string if not defined
                 updateWebpackConfig(fileName, folderPath);
             });
 
             function createNewFile(fileName, folderPath = '') {
                 const tsFilePath = path.join(process.cwd(), 'src', 'TypeScript', folderPath, `${fileName}.ts`);
-                fs.mkdirSync(path.dirname(tsFilePath), { recursive: true });  // Ensure the directory exists
+                fs.mkdirSync(path.dirname(tsFilePath), { recursive: true });  // ensure the directory exists
                 fs.writeFileSync(tsFilePath, '// Your TypeScript code here', 'utf8');
                 console.log(`File ${chalk.green.bold(`${fileName}.ts`)} created successfully.`);
             }
         break;
         
     case 'build':
-    const webpackConfigPath = path.join(process.cwd(), 'webpack-entry-config.json');
-    if (fs.existsSync(webpackConfigPath)) {
-        const configContent = JSON.parse(fs.readFileSync(webpackConfigPath, 'utf8'));
-        // const entryPaths = Object.keys(configContent).map(key => `${key}.js`);
-        const entryPaths = Object.keys(configContent).map(key => {
-            const pathComponents = key.split('/');
-            const fileName = pathComponents.pop() + '.js';
-            const path = pathComponents.join('/') + (pathComponents.length > 0 ? '/' : '');
-            return {
-                name: `${path}${chalk.bold(fileName)}`,
-                value: `${key}.js`,
-            };
-        });
-
-        inquirer.prompt([{
-            type: 'checkbox',
-            name: 'buildPaths',
-            message: 'Please select the path(s) to build:',
-            choices: entryPaths,
-        }])
-        .then(async (answers) => {
-            const { buildPaths } = answers;
-
-            if (buildPaths.length === 0) {
-                console.log(chalk.yellow('No paths selected. Please select at least one path to proceed.'));
-                return; // Here we exit if no paths were selected.
-            }
-
-            const safePaths = buildPaths.map(p => `/SuiteScripts/${p.replace(/(["\s'$`\\])/g, '\\$1')}`);
-
-            try {
-                const projectConfig = JSON.parse(fs.readFileSync('./project.json', 'utf8'));
-                if (typeof projectConfig !== 'object' || !projectConfig.defaultAuthId) {
-                    throw new Error();
-                }
-                const authId = projectConfig.defaultAuthId;
-
-                const uploadConfirmation = await inquirer.prompt([{
-                    type: 'confirm',
-                    name: 'shouldContinue',
-                    message: `The file will be uploaded using the account ${chalk.yellow(authId)}. Do you want to continue?`,
-                    default: false
-                }]);
-
-                if (!uploadConfirmation.shouldContinue) {
-                    console.log('Upload cancelled by user.');
-                    return;
-                }
-
-                const toolkit = process.argv[3] === 'bun' ? 'bun' : 'npm';
-                const build = spawn(toolkit, ['run', 'build', '--color']);
-
-                const sanitizeOutput = (data) => {
-                    // return data.toString().split('\n').map(line => line.trim()).filter(line => line).join('\n');
-                    return data.toString().split('\n').map(line => line.trim()).filter(line => line).join('\n').replace(/\n+/g, '\n');
+        const webpackConfigPath = path.join(process.cwd(), 'webpack-entry-config.json');
+        if (fs.existsSync(webpackConfigPath)) {
+            const configContent = JSON.parse(fs.readFileSync(webpackConfigPath, 'utf8'));
+            const entryPaths = Object.keys(configContent).map(key => {
+                const pathComponents = key.split('/');
+                const fileName = pathComponents.pop() + '.js';
+                const path = pathComponents.join('/') + (pathComponents.length > 0 ? '/' : '');
+                return {
+                    name: `${path}${chalk.bold(fileName)}`,
+                    value: `${key}.js`,
                 };
-                
-                build.stdout.on('data', (data) => {
-                    console.log(sanitizeOutput(data));
-                });
-                
-                build.stderr.on('data', (data) => {
-                    console.error(sanitizeOutput(data));
-                }); 
+            });
 
-                build.on('close', (code) => {
-                    if(code !== 0) {
-                        console.error(`Build process exited with code ${code}`);
+            inquirer.prompt([{
+                type: 'checkbox',
+                name: 'buildPaths',
+                message: 'Please select the path(s) to build:',
+                choices: entryPaths,
+            }])
+            .then(async (answers) => {
+                const { buildPaths } = answers;
+
+                if (buildPaths.length === 0) {
+                    console.log(chalk.yellow('No paths selected. Please select at least one path to proceed.'));
+                    return; // exit if no paths were selected
+                }
+
+                const safePaths = buildPaths.map(p => `/SuiteScripts/${p.replace(/(["\s'$`\\])/g, '\\$1')}`);
+
+                try {
+                    const projectConfig = JSON.parse(fs.readFileSync('./project.json', 'utf8'));
+                    if (typeof projectConfig !== 'object' || !projectConfig.defaultAuthId) {
+                        throw new Error("Invalid project configuration or missing defaultAuthId.");
+                    }
+                    const authId = projectConfig.defaultAuthId;
+                
+                    const uploadConfirmation = await inquirer.prompt([{
+                        type: 'confirm',
+                        name: 'shouldContinue',
+                        message: `The file will be uploaded using the account ${chalk.yellow(authId)}. Do you want to continue?`,
+                        default: false
+                    }]);
+                
+                    if (!uploadConfirmation.shouldContinue) {
+                        console.log('Upload cancelled by user.');
                         return;
                     }
+                
+                    const toolkit = process.argv[3] === 'bun' ? 'bun' : 'npm';
+                    execSync(`${toolkit} run build`, { stdio: 'inherit' })
+                    execSync(`suitecloud file:upload --paths ${safePaths.join(' ')}`, { stdio: 'inherit' });
+                
+                    console.log(`${chalk.green('Upload complete!')}`);
+                } catch (e) {
+                    if (e.message.includes("Invalid project configuration or missing defaultAuthId")) {
+                        console.error(`${chalk.red(e.message)}`);
+                    } else {
+                        console.error(`${chalk.red('No account connected.')} Run ${chalk.magenta.bold('suitecloud account:setup -i')}`);
+                    }
+                }
+            });
+        } else {
+            console.error("webpack-entry-config.json does not exist or is not readable.");
+        }
+        break;
 
-                    const spinner = ora('Uploading file, please wait...').start();
+    case 'template':
+        inquirer.prompt([
+            {
+                type: 'list',
+                name: 'scriptType',
+                message: 'Please select the script type:',
+                choices: Array.from(scriptTypesMap.keys()),
+            }
+        ]).then(answers => {
+            const { scriptType } = answers;
+            const subTypes = scriptTypesMap.get(scriptType);
+            
+            if (subTypes && subTypes.length > 0) {
+                let message = `Select the ${scriptType} function(s) to add:`;
+                let promptType = 'list';
+            
+                if (multipleSelectionTypes.includes(scriptType)) {
+                    message = `Select the ${scriptType} functions to add:`;
+                    promptType = 'checkbox';
+                }
 
-                    const upload = spawn('suitecloud', ['file:upload', '--paths', ...safePaths]);
-                    
-                    upload.stdout.on('data', (data) => {
-                        console.log(sanitizeOutput(data));
-                    });
-                    
-                    upload.stderr.on('data', (data) => {
-                        console.error(sanitizeOutput(data));
-                    });                    
-
-                    upload.on('close', (code) => {
-                        spinner.stop();
-                        if(code !== 0) {
-                            console.error(`${chalk.red(`Upload process exited with code ${code}`)}`);
-                        } else {
-                            console.log(`${chalk.green('Upload complete!')}`);
-                        }
-                    });
+                inquirer.prompt([
+                    {
+                        type: promptType,
+                        name: 'subTypes',
+                        message: message,
+                        choices: subTypes,
+                    }
+                ]).then(subAnswers => {
+                    const selectedFunctions = Array.isArray(subAnswers.subTypes) ? subAnswers.subTypes : [subAnswers.subTypes];
+                    promptForTargetFile(scriptType, selectedFunctions);
                 });
-            } catch (e) {
-                console.error(`${chalk.red('No account connected.')} Run ${chalk.magenta.bold('suitecloud account:setup -i')}`);
+            } else {
+                promptForTargetFile(scriptType);
             }
         });
-    } else {
-        console.error("webpack-entry-config.json does not exist or is not readable.");
-    }
-    break;
+        break;
 
                 
     case 'authid':
-        const newAuthId = args[0]; // Get the new AuthID from arguments
-        const projectPath = path.join(process.cwd(), 'project.json'); // Define the path to the project.json file
+        const newAuthId = args[0];
+        const projectPath = path.join(process.cwd(), 'project.json'); // define the path to the project.json file
 
-        // Check if the project.json file exists
         if (fs.existsSync(projectPath)) {
-            // Read the file content, then parse it to get the projectConfig object
             const projectConfigData = fs.readFileSync(projectPath, 'utf8');
             const projectConfig = JSON.parse(projectConfigData);
 
-            // If a new AuthID is provided, update the project.json file, otherwise print the current AuthID
             if (newAuthId) {
-                const oldAuthId = projectConfig.defaultAuthId; // Get the old AuthID
                 
                 if (oldAuthId === newAuthId) {
                     console.log(`authID remains ${chalk.green(oldAuthId)}. No change was made.`);
                     process.exit(0);
                 }
 
-                // Update the defaultAuthId in the projectConfig object
                 projectConfig.defaultAuthId = newAuthId;
 
-                // Write the updated projectConfig object back to the project.json file
                 fs.writeFileSync(projectPath, JSON.stringify(projectConfig, null, 4), 'utf8');
                 
-                // Log a message indicating the old and new AuthID
                 console.log(`authID ${chalk.red(oldAuthId)} was swapped out for ${chalk.green(newAuthId)}`);
             } else {
-                // Log the current AuthID
                 console.log(`Current authID: ${chalk.hex('#FFAF53').bold(projectConfig.defaultAuthId)}`);
             }
         } else {
@@ -344,6 +354,10 @@ switch (command) {
 
     case 'setup':
         setupMenu();
+        break;
+
+    case 'help':
+        displayHelp();
         break;
 
     default:
@@ -376,10 +390,10 @@ export function createProjectStructure(projectName, fileName) {
         'webpack.config.js',
     ];
 
-    // Creating Directories
+    // creating directories
     paths.forEach(p => fs.mkdirSync(path.join(rootDir, p), { recursive: true }));
 
-    // Creating Files
+    // creating files
     files.forEach(f => {
         const templatePath = path.join(__dirname, 'templates', f);
         let content = '';
@@ -393,16 +407,15 @@ export function createProjectStructure(projectName, fileName) {
     
     if (!fileName.endsWith('.ts')) { fileName += '.ts'; }
     const tsFilePath = path.join(rootDir, 'src', 'TypeScript', `${fileName}`);
-    fs.mkdirSync(path.dirname(tsFilePath), { recursive: true });  // Ensure the directory exists
-    fs.writeFileSync(tsFilePath, '// Your TypeScript code here', 'utf8');
+    fs.mkdirSync(path.dirname(tsFilePath), { recursive: true });  // ensure the directory exists
+    fs.writeFileSync(tsFilePath, '// run \'nst template\' to jump start your project', 'utf8');
 
     console.log(`Project ${projectName} created successfully.`);
-    return rootDir;  // Return the created project path
+    return rootDir;  // return the created project path
 }
 
 function isValidFileName(fileName) {
-    // Regular expression: allows only lowercase a-z, _, and ., and must end with .ts
-    const regex = /^[a-z_]+(?:\.ts)?$/;
+    const regex = /^[a-z_]+(?:\.ts)?$/; // regular expression: allows only lowercase a-z, _, and ., and must end with .ts
     return regex.test(fileName);
 }
 
@@ -410,29 +423,49 @@ function isValidFileName(fileName) {
 //  Setup Menu
 // --------------------------------------------------------------------------------------------------
 async function setupMenu() {
+    const userConfigPath = path.join(__dirname, 'userConfig.json');
+    let userConfig = {};
+    
+    // Read the user configuration if it exists
+    if (fs.existsSync(userConfigPath)) {
+        userConfig = JSON.parse(fs.readFileSync(userConfigPath, 'utf8'));
+    }
+    
     let isRunning = true;
 
     while (isRunning) {
+        const choices = [
+            `Set Prefix ${chalk.grey(`${userConfig.filePrefix || 'Not set'}`)}`,
+            `Modify Filename Format ${chalk.grey(`${userConfig.filenameFormat || 'Not set'}`)}`,
+            `Modify Username ${chalk.grey(`${userConfig.username || 'Not set'}`)}`,
+            `Modify Company ${chalk.grey(`${userConfig.company || 'Not set'}`)}`,
+            'Cancel'
+        ];
+
         const answers = await inquirer.prompt([
             {
                 type: 'list',
                 name: 'setupOption',
                 message: 'Please choose an option:',
-                choices: [
-                    'Set Prefix',
-                    'Modify Filename Format',
-                    'Cancel'
-                ],
+                choices: choices,
             }
         ]);
 
         switch (answers.setupOption) {
-            case 'Set Prefix':
+            case choices[0]:  // Based on the choices array
                 await setPrefix();
                 break;
 
-            case 'Modify Filename Format':
+            case choices[1]:
                 await modifyFilenameFormat();
+                break;
+            
+            case choices[2]:
+                await modifyUsername();
+                break;
+            
+            case choices[3]:
+                await modifyCompany();
                 break;
 
             case 'Cancel':
@@ -441,6 +474,7 @@ async function setupMenu() {
         }
     }
 }
+
 
 async function setPrefix() {
     const answers = await inquirer.prompt([
@@ -489,8 +523,204 @@ async function modifyFilenameFormat() {
     ]);
 
     userConfig.filenameFormat = answers.newFilenameFormat;
-
     fs.writeFileSync(userConfigPath, JSON.stringify(userConfig, null, 4), 'utf8');
     console.log(`Filename format updated to: ${chalk.green.bold(answers.newFilenameFormat)}`);
 }
+
+async function modifyUsername() {
+    const answers = await inquirer.prompt([
+        {
+            type: 'input',
+            name: 'username',
+            message: 'Enter your full name:',
+            validate: input => input === "" || input.match(/^[a-zA-Z0-9-_ ]+$/) !== null || "Only alphanumeric, spaces, hyphens, and underscores allowed!"
+        }
+    ]);
+    const userConfigPath = path.join(__dirname, 'userConfig.json');
+    let userConfig = {};
+
+    if (fs.existsSync(userConfigPath)) {
+        userConfig = JSON.parse(fs.readFileSync(userConfigPath, 'utf8'));
+    }
+    
+    userConfig.username = answers.username;
+
+    fs.writeFileSync(userConfigPath, JSON.stringify(userConfig, null, 4), 'utf8');
+    console.log(`Username set to: ${answers.username}`);
+}
+
+async function modifyCompany() {
+    const answers = await inquirer.prompt([
+        {
+            type: 'input',
+            name: 'company',
+            message: 'Enter the name of your company:',
+            validate: input => input === "" || input.match(/^[a-zA-Z0-9-_ ]+$/) !== null || "Only alphanumeric, spaces, hyphens, and underscores allowed!"
+        }
+    ]);
+    const userConfigPath = path.join(__dirname, 'userConfig.json');
+    let userConfig = {};
+
+    if (fs.existsSync(userConfigPath)) {
+        userConfig = JSON.parse(fs.readFileSync(userConfigPath, 'utf8'));
+    }
+    
+    userConfig.company = answers.company;
+
+    fs.writeFileSync(userConfigPath, JSON.stringify(userConfig, null, 4), 'utf8');
+    console.log(`Company set to: ${answers.company}`);
+}
+
+// --------------------------------------------------------------------------------------------------
+//  Help
+// --------------------------------------------------------------------------------------------------
+function displayHelp() {
+    console.log(`
+Welcome to the CLI!
+
+Available Commands:
+  help                          Display this help message.
+  create                        Create a project and run npm install automatically.
+  newfile                       Create a new .ts file and update webpack automatically.
+  template                      Start the template flow. Choose the script type, select the function(s) to add, and then select the file to replace.
+                                ${chalk.gray(`Only files with less than 20 lines will show up to prevent overwriting important files.`)}
+  build                         Runs npm run build && suitecloud file:upload --paths "path1" "path2" etc.
+  authid [new authid]           Without argument it responds with the current authID, with argument it will change authID to the typed one.
+  setup                         Access the setup menu to configure CLI settings.
+    -> Set Prefix               Set the file prefix for templates.
+    -> Modify Filename Format   Modify the filename format for templates.
+    -> Modify Username          Set or modify the username. Used to set the author on the header from template command.
+                                ${chalk.gray(`If not set, it will fetch the user from the computer.`)}
+    -> Modify Company           Set or modify the company name. Used to set copyright information on the header from template command.
+                                ${chalk.gray(`If not set, it will fetch the domain from email used in git.`)}
+
+Usage:
+  [command] [options]
+
+Examples:
+  $ nsx help          Show help information.
+  $ nsx create        Create a project.
+  $ nsx setup         Access the setup menu to configure CLI settings.
+  $ nsx template      Start the template flow.
+
+For more detailed information or to report issues, please refer to the documentation or contact the developer.
+    `);
+}
+
+
+
+// --------------------------------------------------------------------------------------------------
+//  Templates
+// --------------------------------------------------------------------------------------------------
+function promptForTargetFile(scriptType, subTypes) {
+    // read the src/TypeScript directory to get all .ts files
+    const scriptFiles = fs.readdirSync('src/TypeScript')
+        .filter(file => file.endsWith('.ts'))
+        .filter(file => {
+            const fileContent = fs.readFileSync(`src/TypeScript/${file}`, 'utf8');
+            const lineCount = fileContent.split('\n').length;
+            return lineCount <= 20;
+        });
+
+    if (scriptFiles.length === 0) {
+        console.error('No valid files found with less than 20 lines. Command has been canceled to prevent overwriting important files.');
+        return;
+    }
+
+    inquirer.prompt([
+        {
+            type: 'list',
+            name: 'targetFile',
+            message: 'Please select the file you want to replace:',
+            choices: scriptFiles,
+        }
+    ]).then(targetFileAnswers => {
+        const { targetFile } = targetFileAnswers;
+        replaceFileWithTemplate(`src/TypeScript/${targetFile}`, scriptType, subTypes);
+    });
+}
+
+
+async function replaceFileWithTemplate(targetFilePath, scriptType, subTypes) {
+    // define template paths
+    const scriptTypeFolderName = scriptType.replace(/\//g, '').replace(/\s/g, '');
+    const headerTemplatePath = path.join(__dirname, 'templates/scripts/_header.ts');
+    const tagsTemplatePath = path.join(__dirname, `templates/scripts/${scriptTypeFolderName}/_tags.ts`);
+    const interfaceTemplatePath = path.join(__dirname, `templates/scripts/${scriptTypeFolderName}/_interface.ts`);
+    const importTemplatePath = path.join(__dirname, `templates/scripts/${scriptTypeFolderName}/_import.ts`);
+
+    // get the paths for each selected function
+    const functionTemplatePaths = (subTypes || []).map(subType => path.join(__dirname, `templates/scripts/${scriptTypeFolderName}/${subType}.ts`));
+    
+    let combinedTemplate = '';
+
+    // load and combine templates
+    if (fs.existsSync(tagsTemplatePath)) {
+        combinedTemplate += fs.readFileSync(tagsTemplatePath, 'utf8') + '\n';
+    }
+    if (fs.existsSync(headerTemplatePath)) {
+        combinedTemplate += fs.readFileSync(headerTemplatePath, 'utf8') + '\n';
+    }
+    if (fs.existsSync(importTemplatePath)) {
+        combinedTemplate += fs.readFileSync(importTemplatePath, 'utf8') + '\n';
+    }
+    if (fs.existsSync(interfaceTemplatePath)) {
+        combinedTemplate += fs.readFileSync(interfaceTemplatePath, 'utf8') + '\n';
+    }
+    for (const funcPath of functionTemplatePaths) {
+        if (fs.existsSync(funcPath)) {
+            combinedTemplate += fs.readFileSync(funcPath, 'utf8') + '\n';
+        }
+    }
+
+    // if no templates were found, exit
+    if (!combinedTemplate) {
+        console.error('No templates found.');
+        return;
+    }
+
+    // the placeholder replacement process
+    const today = new Date();
+    const filename = path.basename(targetFilePath);
+
+    const userConfigPath = path.join(__dirname, 'userConfig.json');
+    let userConfig = {};
+
+    if (fs.existsSync(userConfigPath)) {
+        userConfig = JSON.parse(fs.readFileSync(userConfigPath, 'utf8'));
+    }
+
+    let username = userConfig.username ? userConfig.username : os.userInfo().username;
+    let userCompany = userConfig.company;
+
+    if (!userCompany) {
+        try {
+            const email = execSync('git config --global user.email').toString().trim();
+            userCompany = email.split('@')[1];
+        } catch (error) {
+            const answer = await inquirer.prompt([{
+                type: 'input',
+                name: 'company',
+                message: 'Please enter your company name:',
+            }]);
+            userConfig.company = answer.company;
+            userCompany = answer.company;
+            fs.writeFileSync(userConfigPath, JSON.stringify(userConfig, null, 4), 'utf8');
+        }
+    }
+
+    let tabsRequired = Math.ceil((32 - username.length) / 4);
+    let tabs = '\t'.repeat(tabsRequired);
+    combinedTemplate = combinedTemplate
+        .replace(/%%YEAR%%/g, today.getFullYear().toString())
+        .replace(/%%DATE%%/g, today.toISOString().split('T')[0])
+        .replace(/%%AUTHOR%%/g, username)
+        .replace(/%%TABS%%/g, tabs)
+        .replace(/%%FILENAME%%/g, filename)
+        .replace(/%%COMPANY%%/g, userCompany);
+
+    fs.writeFileSync(targetFilePath, combinedTemplate, 'utf8');
+    console.log('File content replaced with template.');
+}
+
 

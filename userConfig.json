@@ -1,4 +1,6 @@
 {
     "filePrefix": "",
-    "filenameFormat": "{prefix}_{scriptType}_{projectName}"
+    "filenameFormat": "{prefix}_{scriptType}_{projectName}",
+    "company": "",
+    "username": ""
 }
