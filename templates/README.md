@@ -4,7 +4,7 @@ NetSuite SDF Repo for client projects.
 Uses TypeScript and Webpack 
 
 # To Do checklist:
-1. Ensure that you have installed Java17, Suitecloud and node/npm.
+1. Ensure that you have installed Java17, Suitecloud and node/npm, see inforamtion how to install in **xxxxx**
 2. Change name of the SDF Project folder (SDF Project Template) to a descriptive name of the project/feature you are developing 
 3. Change project name in manifest.xml file 
 4. Enter project name in projectconfig.js file 
