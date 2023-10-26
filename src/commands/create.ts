@@ -18,7 +18,7 @@ const scriptTypes = [
 ]
 
 export async function executeCreateCommand() {
-    const userConfig = await readUserConfig()  // Use the readUserConfig function
+    const userConfig = await readUserConfig()
     let filePrefix: string = userConfig.filePrefix || ''
     const filenameFormat: string = userConfig.filenameFormat || '{prefix}_{scriptType}_{projectName}'
 
@@ -37,9 +37,9 @@ export async function executeCreateCommand() {
                     return true
                 }
             }
-        ]).then(async (answers) => {   // Note the async here, since we are using await inside
+        ]).then(async (answers) => {
             filePrefix = answers.filePrefix
-            await writeUserConfig({ filePrefix })  // Use the writeUserConfig function
+            await writeUserConfig({ filePrefix })
             promptForProjectDetails(filenameFormat, filePrefix)
         })
     }

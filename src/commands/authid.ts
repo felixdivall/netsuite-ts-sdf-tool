@@ -6,7 +6,6 @@ const [,, /* command */, ...args] = process.argv
 
 export async function executeAuthIdCommand () {
     const newAuthId = args[0]
-    console.log('test')
     const projectPath = path.join(process.cwd(), '/project.json') // define the path to the project.json file
 
     if (fs.existsSync(projectPath)) {

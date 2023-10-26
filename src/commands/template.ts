@@ -15,7 +15,7 @@ const scriptTypesMap = new Map([
     ['Suitelet', ['Base']],
     ['Map/Reduce', ['Base']],
     ['Scheduled Script', ['execute()']],
-    ['RESTlet', ['get()', 'post()', 'put()', 'delete()', 'patch()', 'head()']],
+    ['RESTlet', ['get()', 'post()', 'put()', 'delete()', 'patch()']],
     ['Portlet', ['render()']],
     ['Mass Update', ['each()']],
     ['Workflow Action', ['onAction()']],
