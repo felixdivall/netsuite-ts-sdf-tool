@@ -2,11 +2,12 @@ import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
-interface UserConfig {
+export interface UserConfig {
     filePrefix?: string;
     filenameFormat?: string;
     company?: string;
     username?: string;
+    folderStructure?: string;
 }
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))

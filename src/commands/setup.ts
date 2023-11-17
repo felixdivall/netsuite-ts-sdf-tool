@@ -1,13 +1,7 @@
 import chalk from 'chalk'
 import inquirer from 'inquirer'
-import { readUserConfig, writeUserConfig } from '../utils/config-helpers.js'
-
-interface UserConfig {
-    filePrefix?: string;
-    filenameFormat?: string;
-    company?: string;
-    username?: string;
-}
+import * as FOLDER from '../definitions/folder.js'
+import { readUserConfig, writeUserConfig, UserConfig } from '../utils/config-helpers.js'
 
 export async function executeSetupCommand() {
     let userConfig: UserConfig = await readUserConfig()
@@ -19,6 +13,7 @@ export async function executeSetupCommand() {
             `Modify Filename Format ${chalk.grey(`${userConfig.filenameFormat || 'Not set'}`)}`,
             `Modify Username ${chalk.grey(`${userConfig.username || 'Not set'}`)}`,
             `Modify Company ${chalk.grey(`${userConfig.company || 'Not set'}`)}`,
+            `Modify Folder Structure ${chalk.grey(`${userConfig.folderStructure || 'Not set'}`)}`,
             'Cancel'
         ]
 
@@ -46,6 +41,10 @@ export async function executeSetupCommand() {
 
             case choices[3]:
                 await modifyCompany()
+                break
+
+            case choices[4]:
+                await modifyFolderStructure()
                 break
 
             case 'Cancel':
@@ -118,4 +117,17 @@ async function modifyCompany() {
     ])
     await writeUserConfig({ company: answers.company })
     console.log(`Company set to: ${answers.company}`)
+}
+
+async function modifyFolderStructure() {
+    const answers = await inquirer.prompt([
+        {
+            type: 'list',
+            name: 'folderStructure',
+            message: 'Select your preferred folder structure:',
+            choices: [FOLDER.STRUCTURE.STANDARD, FOLDER.STRUCTURE.SCRIPT_TYPE]
+        }
+    ])
+    await writeUserConfig({ folderStructure: answers.folderStructure })
+    console.log(`Folder structure set to: ${answers.folderStructure}`)
 }

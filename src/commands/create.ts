@@ -2,6 +2,7 @@ import { execSync } from 'child_process'
 import os from 'os'
 import chalk from 'chalk'
 import inquirer from 'inquirer'
+import * as FOLDER from '../definitions/folder.js'
 import { readUserConfig, writeUserConfig } from '../utils/config-helpers.js'
 import { createProjectStructure, updateWebpackConfig } from '../utils/project-helpers.js'
 
@@ -20,28 +21,44 @@ const scriptTypes = [
 export async function executeCreateCommand() {
     const userConfig = await readUserConfig()
     let filePrefix: string = userConfig.filePrefix || ''
+    let folderStructure: string = userConfig.folderStructure || ''
     const filenameFormat: string = userConfig.filenameFormat || '{prefix}_{scriptType}_{projectName}'
 
-    if (filePrefix) {
+    if (filePrefix && folderStructure) {
         promptForProjectDetails(filenameFormat, filePrefix)
     } else {
-        inquirer.prompt([
-            {
-                type: 'input',
-                name: 'filePrefix',
-                message: 'Please enter a prefix for file names:',
-                validate: (input) => {
-                    if (!input.trim()) {
-                        return 'The prefix cannot be empty'
+        if (!filePrefix) {
+            inquirer.prompt([
+                {
+                    type: 'input',
+                    name: 'filePrefix',
+                    message: 'Please enter a prefix for file names:',
+                    validate: (input) => {
+                        if (!input.trim()) {
+                            return 'The prefix cannot be empty'
+                        }
+                        return true
                     }
-                    return true
                 }
-            }
-        ]).then(async (answers) => {
-            filePrefix = answers.filePrefix
-            await writeUserConfig({ filePrefix })
-            promptForProjectDetails(filenameFormat, filePrefix)
-        })
+            ]).then(async (answers) => {
+                filePrefix = answers.filePrefix
+                await writeUserConfig({ filePrefix })
+            })
+        }
+        if (!folderStructure) {
+            inquirer.prompt([
+                {
+                    type: 'list',
+                    name: 'folderStructure',
+                    message: 'Select your preferred folder structure:',
+                    choices: [FOLDER.STRUCTURE.STANDARD, FOLDER.STRUCTURE.SCRIPT_TYPE]
+                }
+            ]).then(async (answers) => {
+                folderStructure = answers.folderStructure
+                await writeUserConfig({ folderStructure })
+            })
+        }
+        promptForProjectDetails(filenameFormat, filePrefix)
     }
 }
 
@@ -77,7 +94,7 @@ function promptForProjectDetails(filenameFormat: string, filePrefix: string) {
             ])
 
             if (confirmAnswer.confirmFileName) {
-                const projectPath = createProjectStructure(projectName, fileName)
+                const projectPath = createProjectStructure(projectName, fileName, scriptType)
                 updateWebpackConfig(fileName, folderPath, projectPath)
             } else {
                 const customFileNameAnswer = await inquirer.prompt([
@@ -92,7 +109,7 @@ function promptForProjectDetails(filenameFormat: string, filePrefix: string) {
                 fileName = customFileNameAnswer.customFileName
 
                 // continue with project creation with customFileName
-                const projectPath = createProjectStructure(projectName, fileName)
+                const projectPath = createProjectStructure(projectName, fileName, scriptType)
                 updateWebpackConfig(fileName, folderPath, projectPath)
             }
             if (os.platform() === 'win32') {

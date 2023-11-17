@@ -1,16 +1,28 @@
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import * as FOLDER from '../definitions/folder.js'
+import { readUserConfig, UserConfig } from '../utils/config-helpers.js'
+import { extractScriptType } from '../utils/string-helpers.js'
+const userConfig: UserConfig = await readUserConfig()
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-export function createProjectStructure(projectName: string, fileName: string) {
+export function createProjectStructure(projectName: string, fileName: string, scriptType: string) {
     const rootDir = path.join(process.cwd(), projectName)
     const paths = [
         'src/FileCabinet/SuiteScripts',
+        'src/Objects',
         'src/TypeScript',
         'vscode',
     ]
+    if (userConfig.folderStructure === FOLDER.STRUCTURE.SCRIPT_TYPE) {
+        paths.push(`src/TypeScript/entry_points/${scriptType}`)
+        paths.push(`src/TypeScript/core/enums`)
+        paths.push(`src/TypeScript/core/repositories`)
+        paths.push(`src/TypeScript/core/services`)
+        paths.push(`src/TypeScript/libs`)
+    }
     const files = [
         'src/deploy.xml',
         'src/manifest.xml',
@@ -45,7 +57,11 @@ export function createProjectStructure(projectName: string, fileName: string) {
     })
 
     if (!fileName.endsWith('.ts')) { fileName += '.ts' }
-    const tsFilePath = path.join(rootDir, 'src', 'TypeScript', `${fileName}`)
+    let tsFilePath = path.join(rootDir, 'src', 'TypeScript', fileName)
+    if (userConfig.folderStructure === FOLDER.STRUCTURE.SCRIPT_TYPE) {
+        tsFilePath = path.join(rootDir, 'src', 'TypeScript', 'entry_points', scriptType, fileName)
+    }
+
     fs.mkdirSync(path.dirname(tsFilePath), { recursive: true })  // ensure the directory exists
     fs.writeFileSync(tsFilePath, '// run \'nsx template\' to jump start your project', 'utf8')
 
@@ -73,8 +89,14 @@ export function updateWebpackConfig(fileName: string, folderPath: string, projec
 
     // using folderPath if provided, otherwise just using fileName
     const entryKey = folderPath ? `${folderPath}/${file}` : file
-    configContent[entryKey] = `./src/TypeScript/${file}.ts`
+    if (userConfig.folderStructure === FOLDER.STRUCTURE.SCRIPT_TYPE) {
+        const scriptType = extractScriptType(file)
+        configContent[entryKey] = `./src/TypeScript/entry_points/${scriptType}/${file}.ts`
+    } else {
+        configContent[entryKey] = `./src/TypeScript/${file}.ts`
+    }
 
     fs.writeFileSync(webpackConfigPath, JSON.stringify(configContent, null, 4), 'utf8')
     console.log(`webpack-entry-config.json updated successfully.`)
 }
+

@@ -1,4 +1,5 @@
 import chalk from 'chalk'
+import * as FOLDER from '../definitions/folder.js'
 
 export async function executeHelpCommand() {
     console.log(`
@@ -19,6 +20,8 @@ Available Commands:
                                 ${chalk.gray(`If not set, it will fetch the user from the computer.`)}
     -> Modify Company           Set or modify the company name. Used to set copyright information on the header from template command.
                                 ${chalk.gray(`If not set, it will fetch the domain from email used in git.`)}
+    -> Modify Folder Structure  Modifies the folder structure. Standard places everything i src/TypeScript, while ${FOLDER.STRUCTURE.SCRIPT_TYPE}
+                                sorts files by their script type and adds a more organized structure.
 
 Usage:
   [command] [options]
