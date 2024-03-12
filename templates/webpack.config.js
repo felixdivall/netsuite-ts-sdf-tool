@@ -10,16 +10,6 @@ const outFolder = path.resolve(
     'src/TypeScript/'
 )
 
-/**
- * Add All Entry point scripts here, the key will be used for output filename.
- *  FOR TRYING WHEN WEBPACK 5 IS RELEASED:
- * const entries = {
- * eqtf_SS_processAexeoExports:
- *   {import: path.resolve(__dirname,'/src/TypeScript/EQT Invoices/aexeo export/eqtf_SS_processAexeoExport.ts'), dependOn: 'shared'},
- *  shared: 'moment'
-}
- */
-
 const getEntries = () => {
     // You might load your entries from a JSON file, or scan directories to generate them, etc.
     // In this example, let's assume you have an `entryConfig.json` file.
