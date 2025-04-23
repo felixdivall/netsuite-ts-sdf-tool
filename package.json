@@ -1,11 +1,11 @@
 {
   "name": "netsuite-ts-sdf-tool",
-  "version": "2.4.1",
+  "version": "2.4.3",
   "description": "NetSuite Tool to generate SDF Template for TypeScript and more",
   "module": "index.js",
   "type": "module",
   "devDependencies": {
-    "@hitc/netsuite-types": "^2021.1.9",
+    "@hitc/netsuite-types": "^2025.1.9",
     "@oracle/suitecloud-cli": "^1.7.3",
     "@types/inquirer": "^9.0.6",
     "@types/lodash": "^4.14.200",

@@ -19,7 +19,7 @@
   },
   "homepage": "https://github.com/felixdivall",
   "devDependencies": {
-    "@hitc/netsuite-types": "^2021.1.9",
+    "@hitc/netsuite-types": "^2025.1.9",
     "@oracle/suitecloud-cli": "^1.7.3",
     "@oracle/suitecloud-unit-testing": "^1.1.4",
     "@typescript-eslint/eslint-plugin": "^7.1.0",
