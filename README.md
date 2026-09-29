@@ -53,9 +53,9 @@ or with an optional argument:
 ```bash
 nsx build bun
 ```
-Upon execution, the CLI will prompt you to select one or more path(s) to build from a list. Choose the desired option(s) and the script will handle the build and upload process. Ensure your project.json is properly configured and not empty, as the CLI will fetch the account authentication ID from this file as a security step to not accidentaly deploy to Production.
+Upon execution, the CLI will prompt you to select one or more path(s) to build from a list. Choose the desired option(s) and the script will handle the build and upload process. Ensure your project.json is properly configured and not empty, as the CLI will fetch the account authentication ID from this file as a security step to not accidentally deploy to Production.
 
-If used without bun as argument, it uses npm for the build process. If used with bun as argument it'll run using bun insxead.
+If used without bun as argument, it uses npm for the build process. If used with bun as argument, it'll run using bun instead.
 
 ```bash
 npm/bun run build && suitecloud file:upload --paths "/SuiteScript/YOUR_SELECTED_PATH.js" "/SuiteScript/ANOTHER_SELECTED_PATH.js"
